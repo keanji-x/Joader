@@ -21,7 +21,7 @@ pub enum MsgObject<'a> {
 #[inline]
 fn parse_object<'a>(buf: &mut Cursor<&'a [u8]>) -> MsgObject<'a> {
     match read_marker(buf) {
-        Ok(Marker::FixArray(_)) | Ok(Marker::Array16) => parse_array(buf),
+        Ok(Marker::FixArray(_)) | Ok(Marker::Array16) | Ok(Marker::Array32) => parse_array(buf),
         Ok(Marker::Bin8) | Ok(Marker::Bin16) | Ok(Marker::Bin32) => parse_bin(buf),
         Ok(Marker::FixMap(num)) => parse_map(num, buf),
         Ok(Marker::U32) | Ok(Marker::U16) | Ok(Marker::U8) | Ok(Marker::FixPos(_)) => {
@@ -168,8 +168,46 @@ mod tests {
     use lmdb_zero::open::{NOSUBDIR, RDONLY};
     use lmdb_zero as lmdb;
     #[test]
+    fn test_read() {
+        let location = "/data/lmdb-imagenet/ILSVRC-train.lmdb";
+        let env = unsafe {
+            lmdb::EnvBuilder::new()
+                .unwrap()
+                .open(location, RDONLY | NOSUBDIR, 0o600)
+                .unwrap()
+        };
+        let db = lmdb::Database::open(&env, None, &lmdb::DatabaseOptions::defaults()).unwrap();
+        let txn = lmdb::ReadTransaction::new(&env).unwrap();
+        let acc = txn.access();
+        for i in 0..(env.stat().unwrap().entries-1) {
+            if i%1000 == 0 {
+                println!("{}", i);
+            }
+            let data: &[u8] = acc.get(&db, i.to_string().as_bytes()).unwrap();
+            let data = msg_unpack(data);
+            let data = match &data[0] {
+                MsgObject::Array(data) => data,
+                _ => unimplemented!(),
+            };
+            let image = &data[0];
+            let _label = match data[1].as_ref() {
+                &MsgObject::UInt(b) => b,
+                _ => unimplemented!("{:?}", data[1]),
+            };
+            let content = match image.as_ref() {
+                MsgObject::Map(map) => &map["data"],
+                err => unimplemented!("{:?}", err),
+            };
+            let _data = match *content.as_ref() {
+                MsgObject::Bin(bin) => bin,
+                _ => unimplemented!(),
+            };
+        }
+    }
+
+    #[test]
     fn test_decode() {
-        let location = "/home/xiej/data/lmdb-imagenet/ILSVRC-train.lmdb";
+        let location = "/data/lmdb-imagenet/ILSVRC-train.lmdb";
         let env = unsafe {
             lmdb::EnvBuilder::new()
                 .unwrap()

@@ -1,7 +1,6 @@
-use clap::load_yaml;
-use ::joader::local_cache::cache::Cache;
-use ::joader::new_joader::joader_table::JoaderTable;
-use joader::new_service::{DatasetSvcImpl, IdGenerator, JobSvcImpl};
+use ::joader::cache::cache::Cache;
+use ::joader::joader::joader_table::JoaderTable;
+use joader::service::{DatasetSvcImpl, IdGenerator, JobSvcImpl};
 use joader::proto::dataset::dataset_svc_server::DatasetSvcServer;
 use joader::proto::job::job_svc_server::JobSvcServer;
 use std::collections::HashMap;
@@ -32,7 +31,7 @@ async fn start_server(ip: &str, port: &str) -> Result<(), Box<dyn std::error::Er
     log::info!("start server");
     let id_gen = IdGenerator::new();
     let dataset_id_table = Arc::new(Mutex::new(HashMap::new()));
-    let cache = Arc::new(Mutex::new(Cache::new()));
+    let cache = Arc::new(Mutex::new(Cache::with_capacity(224*224*3*32*(128))));
     let joader_table = Arc::new(Mutex::new(JoaderTable::new(cache)));
     let ip_port = ip.to_string() + ":" + port;
     let addr: SocketAddr = ip_port.parse()?;
@@ -59,9 +58,9 @@ async fn start_server(ip: &str, port: &str) -> Result<(), Box<dyn std::error::Er
     Ok(())
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread", worker_threads = 48)]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let log4rs_config = "log4rs.yaml";
+    let log4rs_config = "/server/log4rs.yaml";
     let ip = "0.0.0.0";
     let port = "4321";
     log4rs::init_file(log4rs_config, Default::default()).unwrap();

@@ -1,77 +1,87 @@
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
-use tokio::sync::Mutex;
-
-use crate::proto::common::{status::Code as RspCode, Status as RspStatus};
-
-pub fn to_status<T>(result: &Result<T, String>) -> RspStatus {
-    match result {
-        Err(msg) => RspStatus {
-            code: RspCode::Err as i32,
-            msg: msg.to_string(),
-        },
-        Ok(_) => RspStatus {
-            code: RspCode::Ok as i32,
-            msg: "Success".into(),
-        },
-    }
-}
-
-pub fn encode_addr_read_off(addr: u64, off: usize) -> u64 {
-    ((off as u64) << 32) + addr
-}
-
-pub fn decode_addr_read_off(addr: u64) -> (u64, u32) {
-    let read_off = (addr >> 32) as u32;
-    (((addr << 32) >> 32), read_off)
-}
-
-#[inline]
-pub fn succ() -> RspStatus {
-    RspStatus {
-        code: RspCode::Ok as i32,
-        msg: "Success".into(),
-    }
-}
-
+use crate::proto::job::expr;
+use crate::proto::job::Condition;
 #[derive(Debug, Clone)]
-pub struct GlobalID {
-    dataset_id: Arc<Mutex<u32>>,
-    loader_id: Arc<Mutex<u32>>,
-    host_id: Arc<Mutex<u32>>,
+pub struct IdGenerator {
+    dataset_id: Arc<AtomicU64>,
+    job_id: Arc<AtomicU64>,
 }
 
-impl GlobalID {
-    pub async fn get_dataset_id(&self) -> u32 {
-        let mut id = self.dataset_id.lock().await;
-        let dataset_id = *id;
-        *id += 1;
-        dataset_id
+impl IdGenerator {
+    pub fn get_dataset_id(&self) -> u64 {
+        self.dataset_id.fetch_add(1, Ordering::SeqCst);
+        self.dataset_id.load(Ordering::SeqCst)
     }
 
-    pub async fn get_loader_id(&self, dataset_id: u32) -> u64 {
-        let mut id = self.loader_id.lock().await;
-        let loader_id = *id as u64;
-        *id += 1;
-        ((dataset_id as u64) << 32) + loader_id
+    pub fn get_job_id(&self) -> u64 {
+        self.job_id.fetch_add(1, Ordering::SeqCst);
+        self.job_id.load(Ordering::SeqCst)
     }
 
-    pub async fn get_host_id(&self) -> u32 {
-        let mut id = self.host_id.lock().await;
-        let host_id = *id;
-        *id += 1;
-        host_id
-    }
-
-    pub fn new() -> GlobalID {
-        GlobalID {
-            dataset_id: Arc::new(Mutex::new(0)),
-            loader_id: Arc::new(Mutex::new(0)),
-            host_id: Arc::new(Mutex::new(0)),
+    pub fn new() -> Self {
+        Self {
+            dataset_id: Arc::new(AtomicU64::new(0)),
+            job_id: Arc::new(AtomicU64::new(0)),
         }
     }
+}
 
-    pub fn parse_dataset_id(loader_id: u64) -> u32 {
-        (loader_id >> 32) as u32
+impl Condition {
+    pub fn eval(&self, lhs: &str) -> bool {
+        let mut res = true;
+        for expr in self.exprs.iter() {
+            res &= match expr.op {
+                op if op == expr::Operation::Lt as i32 => {
+                    lhs.parse::<u32>().unwrap() < expr.rhs.as_str().parse::<u32>().unwrap()
+                }
+                op if op == expr::Operation::Leq as i32 => {
+                    lhs.parse::<u32>().unwrap() <= expr.rhs.as_str().parse::<u32>().unwrap()
+                }
+                op if op == expr::Operation::Gt as i32 => {
+                    lhs.parse::<u32>().unwrap() > expr.rhs.as_str().parse::<u32>().unwrap()
+                }
+                op if op == expr::Operation::Geq as i32 => {
+                    lhs.parse::<u32>().unwrap() >= expr.rhs.as_str().parse::<u32>().unwrap()
+                }
+                op if op == expr::Operation::Eq as i32 => {
+                    lhs.parse::<u32>().unwrap() == expr.rhs.as_str().parse::<u32>().unwrap()
+                }
+                _ => panic!("error op {:?}", expr.op),
+            };
+        }
+        res
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::proto::job::{expr, Condition, Expr};
+    #[test]
+    fn test_complie() {
+        let cond = Condition {
+            exprs: vec![
+                Expr {
+                    op: expr::Operation::Geq as i32,
+                    rhs: "0".to_string(),
+                },
+                Expr {
+                    op: expr::Operation::Lt as i32,
+                    rhs: "16".to_string(),
+                },
+            ],
+        };
+        let vec = (0..128u32).map(|x| x.to_string()).collect::<Vec<_>>();
+        let target = (0..16u32).map(|x| x.to_string()).collect::<Vec<_>>();
+        let res = vec
+            .iter()
+            .cloned()
+            .filter(|s| cond.eval(s.as_str()))
+            .collect::<Vec<_>>();
+        assert_eq!(res, target);
+        // assert!(cond.eval("0"));
+        // assert!(cond.eval("1") == false);
     }
 }

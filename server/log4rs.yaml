@@ -17,6 +17,13 @@ appenders:
     encoder:
       # log 信息模式
       pattern: "{d} - {m}{n}"
+  job:
+    kind: file
+    path: "./log/job.log"
+    append: false
+    encoder:
+      # log 信息模式
+      pattern: "{d} - {m}{n}"
   joader:
     kind: file
     path: "./log/joader.log"
@@ -54,20 +61,15 @@ loggers:
     level: info
     appenders:
       - sampler
-    additive: false
-  joader::sampler_bitmap:
-    level: info
-    appenders:
-      - sampler
   joader::joader:
-    level: debug
-    appenders:
-      - joader
-    additive: false
-  joader::loader:
     level: info
     appenders:
       - joader
+    additive: false
+  joader::job:
+    level: info
+    appenders:
+      - job
     additive: false
   joader::dataset:
     level: info

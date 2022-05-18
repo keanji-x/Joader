@@ -1,6 +1,6 @@
 name: joader
 version: "0.1"
-author: xiejian <xiejian@gmail.com>
+author: xxx
 about: Joint Loader for DL
 args:
     - log4rs_config:

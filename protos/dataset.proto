@@ -1,6 +1,5 @@
 syntax = "proto3";
 import "common.proto";
-
 package dataset;
 message DataItem {
     repeated string keys = 1;

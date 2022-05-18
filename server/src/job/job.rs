@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
+};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
 use crate::proto::job::Data;
@@ -7,7 +10,8 @@ const CAP: usize = 1024;
 #[derive(Debug)]
 pub struct Job {
     id: u64,
-    sender: Sender<Arc<Vec<Data>>>
+    sender: Sender<Arc<Vec<Data>>>,
+    pending: AtomicUsize
 }
 
 impl Job {
@@ -16,7 +20,8 @@ impl Job {
         (
             Arc::new(Job {
                 id,
-                sender: s
+                sender: s,
+                pending: AtomicUsize::new(0)
             }),
             r,
         )
@@ -31,6 +36,21 @@ impl Job {
     }
 
     pub async fn push(&self, v: Arc<Vec<Data>>) {
+        log::debug!("{} push- data with pending {:?} capacity {}", self.id, self.pending.load(Ordering::SeqCst), self.sender.capacity());
         self.sender.send(v).await.unwrap();
+        self.pending.fetch_sub(1, Ordering::SeqCst);
+    }
+
+    pub fn can_push(&self) -> bool {
+        log::debug!("{} try push data with pending {:?} capacity: {}", self.id, self.pending.load(Ordering::SeqCst), self.sender.capacity());
+        self.pending.load(Ordering::SeqCst) < self.sender.capacity()
+    }
+
+    pub fn add_pending(&self) {
+        self.pending.fetch_add(1, Ordering::SeqCst);
+    }
+
+    pub fn capacity(&self) -> usize {
+        self.sender.capacity()
     }
 }

@@ -11,7 +11,6 @@ pub struct JobReceiver<T> {
     recv: Receiver<T>,
 }
 
-// TODO[xj]: 1048 should be fixed
 pub fn new<T: std::fmt::Debug>(job_id: u64) -> (JobSender<T>, JobReceiver<T>) {
     let (sender, recv) = channel::<T>(1048);
     (JobSender { job_id, sender }, JobReceiver { job_id, recv })

@@ -11,15 +11,33 @@ message Data {
     data_type ty = 2;
 }
 
+message Expr {
+    enum operation {
+        LT = 0;
+        LEQ = 1;
+        GT = 2;
+        GEQ = 3;
+        EQ = 4;
+    }
+    operation op = 1;
+    string rhs = 2;
+}
+
+message Condition {
+    repeated Expr exprs = 1;
+}
+
 message CreateJobRequest {
     string name = 1;
     string dataset_name = 2;
+    Condition condition = 3;
 }
 
 message CreateJobResponse {
     uint64 length = 1;
     uint64 job_id = 3;
 }
+
 
 
 message NextRequest {

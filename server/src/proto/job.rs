@@ -16,11 +16,37 @@ pub mod data {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Expr {
+    #[prost(enumeration = "expr::Operation", tag = "1")]
+    pub op: i32,
+    #[prost(string, tag = "2")]
+    pub rhs: ::prost::alloc::string::String,
+}
+/// Nested message and enum types in `Expr`.
+pub mod expr {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[repr(i32)]
+    pub enum Operation {
+        Lt = 0,
+        Leq = 1,
+        Gt = 2,
+        Geq = 3,
+        Eq = 4,
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Condition {
+    #[prost(message, repeated, tag = "1")]
+    pub exprs: ::prost::alloc::vec::Vec<Expr>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CreateJobRequest {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub dataset_name: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub condition: ::core::option::Option<Condition>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CreateJobResponse {
