@@ -65,7 +65,7 @@ for _ in range(dataset_len):
 
 4. Train the model with PyTorch
 
-More example is in client/test and unitests are in each file in server
+More examples are in client/test and unitests are in each file in server
 
 ## License
 
