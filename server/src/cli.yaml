@@ -1,0 +1,27 @@
+name: joader
+version: "0.1"
+author: xiejian <xiejian@gmail.com>
+about: Joint Loader for DL
+args:
+    - log4rs_config:
+        long: log
+        value_name: log4rs_config
+        default_value: log4rs.yaml
+        takes_value: true
+    - ip:
+        long: ip
+        short: i
+        default_value: "0.0.0.0"
+        value_name: ip
+        takes_value: true
+    - port:
+        long: port
+        short: p
+        default_value: "4321"
+        value_name: port
+        takes_value: true
+    - cache_capacity:
+        long: capacity
+        default_value: "1073741824"
+        value_name: cache_capacity
+        takes_value: true

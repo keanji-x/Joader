@@ -1,0 +1,76 @@
+refresh_rate: 30 seconds
+# appender 负责将日志收集到控制台或文件, 可配置多个
+appenders:
+  stdout:
+    kind: console
+  sampler:
+    kind: file
+    path: "./log/sampler.log"
+    append: false
+    encoder:
+      # log 信息模式
+      pattern: "{d} - {m}{n}"
+  sampler_bitmap:
+    kind: file
+    path: "./log/sampler.log"
+    append: false
+    encoder:
+      # log 信息模式
+      pattern: "{d} - {m}{n}"
+  joader:
+    kind: file
+    path: "./log/joader.log"
+    append: false
+    encoder:
+      # log 信息模式
+      pattern: "{d} - {m}{n}"
+  cache:
+    kind: file
+    path: "./log/cache.log"
+    append: false
+    encoder:
+      # log 信息模式
+      pattern: "{d} - {m}{n}"
+  dataset:
+    kind: file
+    path: "./log/dataset.log"
+    append: false
+    encoder:
+      # log 信息模式
+      pattern: "{d} - {m}{n}"
+root:
+  level: info
+  appenders:
+    - stdout
+loggers:
+  # Route log events sent to the "app" logger to the "file" appender,
+  # and *not* the normal appenders installed at the root
+  joader::cache:
+    level: info
+    appenders:
+      - cache
+    additive: false
+  joader::sampler:
+    level: info
+    appenders:
+      - sampler
+    additive: false
+  joader::sampler_bitmap:
+    level: info
+    appenders:
+      - sampler
+  joader::joader:
+    level: debug
+    appenders:
+      - joader
+    additive: false
+  joader::loader:
+    level: info
+    appenders:
+      - joader
+    additive: false
+  joader::dataset:
+    level: info
+    appenders:
+      - dataset
+    additive: false

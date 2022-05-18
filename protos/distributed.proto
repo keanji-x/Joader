@@ -1,0 +1,82 @@
+syntax = "proto3";
+import "common.proto";
+import "dataset.proto";
+package distributed;
+
+message RegisterHostRequest {
+    string ip = 1;
+    uint64 port = 2;
+}
+
+message RegisterHostResponse {
+    uint64 host_id = 1;
+}
+
+message RegisterDatasetRequest {
+    dataset.CreateDatasetRequest request = 1;
+    uint32 dataset_id = 2;
+}
+
+message RegisterDatasetResponse {}
+
+message DeleteHostRequest {
+    string ip = 1;
+    string port = 2;
+}
+
+message DeleteHostResponse {
+    uint64 host_id = 1;
+}
+
+message SampleResult {
+    uint64 loader_id = 1;
+    repeated uint32 indices = 2;
+}
+
+message QueryHostRequest {
+    string ip = 1;
+}
+
+message QueryHostResponse {
+    uint64 port = 1;
+}
+
+message CreateSamplerRequest {
+    string name = 1;
+    string dataset_name = 2;
+    string ip = 3;
+    uint32 nums = 4;
+}
+
+message CreateSamplerResponse {
+    uint64 length = 1;
+    uint64 loader_id = 2;
+    uint32 dataset_id = 3;
+}
+
+message DeleteSamplerRequest {
+    string name = 1;
+    string dataset_name = 2;
+    string ip = 3;
+}
+
+message DeleteSamplerResponse {}
+
+
+message SampleRequest {
+    string ip = 3;
+}
+
+message SampleResponse {
+    repeated SampleResult res = 1;
+}
+
+service DistributedSvc {
+    rpc CreateSampler(CreateSamplerRequest) returns (CreateSamplerResponse);
+    rpc DeleteSampler(DeleteSamplerRequest) returns (DeleteSamplerResponse);
+    rpc QueryHost(QueryHostRequest) returns (QueryHostResponse);
+    rpc Sample(SampleRequest) returns (SampleResponse);
+    rpc RegisterHost(RegisterHostRequest) returns (RegisterHostResponse);
+    rpc DeleteHost(DeleteHostRequest) returns (DeleteHostResponse);
+    rpc RegisterDataset(RegisterDatasetRequest) returns (RegisterDatasetResponse);
+}

@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+import "common.proto";
+
+
+package dataloader;
+
+
+message CreateDataloaderRequest {
+    string name = 1;
+    string dataset_name = 2;
+    uint32 nums = 3;
+}
+
+message CreateDataloaderResponse {
+    uint64 length = 1;
+    string shm_path = 2;
+    uint64 loader_id = 3;
+    common.Status status = 4;
+}
+
+
+message NextRequest {
+    uint64 loader_id = 1;
+    int32 batch_size = 2;
+}
+
+message NextResponse {
+    repeated uint64 address = 2;
+    repeated uint32 read_off = 3;
+}
+
+message DeleteDataloaderRequest {
+    string name = 1;
+    string dataset_name = 2;
+}
+
+message DeleteDataloaderResponse {}
+
+message ResetDataloaderRequest {
+    string name = 1;
+    string dataset_name = 2;
+}
+
+message ResetDataloaderResponse {}
+
+service DataLoaderSvc {
+    rpc CreateDataloader(CreateDataloaderRequest) returns (CreateDataloaderResponse);
+    rpc Next(NextRequest) returns (NextResponse);
+    rpc DeleteDataloader(DeleteDataloaderRequest) returns (DeleteDataloaderResponse);
+    rpc ResetDataloader(ResetDataloaderRequest) returns (ResetDataloaderResponse);
+}

@@ -1,0 +1,38 @@
+syntax = "proto3";
+import "common.proto";
+
+package dataset;
+message DataItem {
+    repeated string keys = 1;
+}
+
+message CreateDatasetRequest {
+    enum Type {
+        FILESYSTEM = 0;
+        LMDB=1;
+        DUMMY=2;  // It's for tests
+    }
+    // It will identify the dataset
+    string name = 1;
+    string location = 2;
+    Type type = 3;
+    repeated DataItem items = 4;
+    repeated uint32 weights = 5;
+}
+
+message CreateDatasetResponse {
+    common.Status status = 2;
+}
+
+message DeleteDatasetRequest {
+    string name = 1;
+}
+
+message DeleteDatasetResponse {
+    common.Status status = 2;
+}
+
+service DatasetSvc {
+    rpc CreateDataset(CreateDatasetRequest) returns (CreateDatasetResponse);
+    rpc DeleteDataset(DeleteDatasetRequest) returns (DeleteDatasetResponse);
+}
